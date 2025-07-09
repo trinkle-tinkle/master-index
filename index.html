@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>master index</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>master index</h1>
+  <input type="text" id="searchInput" placeholder="search...">
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th data-key="title">title ▲▼</th>
+        <th data-key="book">book ▲▼</th>
+        <th data-key="page">page ▲▼</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let data = [];
+    let sortKey = '';
+    let sortAsc = true;
+
+    async function loadData() {
+      const response = await fetch('data.json');
+      data = await response.json();
+      renderTable(data);
+    }
+
+    function renderTable(dataArray) {
+        const tbody = document.querySelector('#dataTable tbody');
+        tbody.innerHTML = '';
+        dataArray.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+            <td><div class="scrollable-cell">${row.title}</div></td>
+            <td><div class="scrollable-cell">${row.book}</div></td>
+            <td><div class="scrollable-cell">${row.page}</div></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function sortTable(key) {
+      sortAsc = key === sortKey ? !sortAsc : true;
+      sortKey = key;
+      const sorted = [...data].sort((a, b) => {
+        if (typeof a[key] === 'number') {
+          return sortAsc ? a[key] - b[key] : b[key] - a[key];
+        } else {
+          return sortAsc
+            ? a[key].localeCompare(b[key])
+            : b[key].localeCompare(a[key]);
+        }
+      });
+      renderTable(sorted);
+    }
+
+    function filterTable(query) {
+      const filtered = data.filter(item =>
+        Object.values(item).some(val =>
+          val.toString().toLowerCase().includes(query.toLowerCase())
+        )
+      );
+      renderTable(filtered);
+    }
+
+    document.querySelectorAll('#dataTable th').forEach(th => {
+      th.addEventListener('click', () => sortTable(th.dataset.key));
+    });
+
+    document.getElementById('searchInput').addEventListener('input', e => {
+      filterTable(e.target.value);
+    });
+
+    loadData();
+  </script>
+</body>
+</html>
